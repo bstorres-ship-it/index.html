@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RutaBacana</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RutaBacana">
+<meta name="theme-color" content="#0A0A0A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230A0A0A'/%3E%3Ccircle cx='58' cy='112' r='26' fill='none' stroke='%23C6F500' stroke-width='8'/%3E%3Ccircle cx='122' cy='112' r='26' fill='none' stroke='%23C6F500' stroke-width='8'/%3E%3Cpath d='M58 112 L82 64 L122 112 M82 64 L98 64' fill='none' stroke='%23C6F500' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+:root{
+--bg:#F6F5F1;--surf:#FFFFFF;--surf2:#EFEEE8;--ink:#0A0A0A;--ink2:#6B6A63;--ink3:#A6A49B;
+--hair:rgba(10,10,10,.07);--hair2:rgba(10,10,10,.12);
+--volt:#C6F500;--volt2:#B2DD00;--voltText:#2C3600;
+--hi:#FF3B30;--md:#FF9500;--sf:#1FC85C;--blue:#2D7DFF;
+--dark:#0A0A0A;--dark2:#16160F;
+--shS:0 1px 2px rgba(10,10,10,.04),0 1px 3px rgba(10,10,10,.05);
+--shM:0 2px 6px rgba(10,10,10,.05),0 10px 24px rgba(10,10,10,.07);
+--shL:0 6px 14px rgba(10,10,10,.06),0 22px 48px rgba(10,10,10,.13);
+--shVolt:0 6px 22px rgba(178,221,0,.5);
+--topSafe:0px;
+}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:'Archivo',system-ui,sans-serif;background:#222;color:var(--ink);display:flex;justify-content:center}
+#app{width:100%;max-width:440px;height:100dvh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,0,0,.4)}
+
+/* STATUS BAR (demo only) */
+#statusbar{height:46px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 7px;background:var(--surf);font-family:'Archivo';font-weight:700;font-size:15px;z-index:60}
+#statusbar .sb-r{display:flex;align-items:center;gap:6px;font-size:15px}
+#statusbar .sb-r i{font-size:16px}
+body.installed #statusbar{display:none}
+body.installed #app{padding-top:env(safe-area-inset-top)}
+
+/* SPLASH */
+#splash{position:absolute;inset:0;z-index:999;background:radial-gradient(120% 90% at 50% 18%,#1C1C16 0%,#0A0A0A 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .55s ease,transform .55s ease}
+#splash.gone{opacity:0;transform:scale(1.04);pointer-events:none}
+.spl-badge{width:96px;height:96px;border-radius:28px;background:var(--volt);display:flex;align-items:center;justify-content:center;box-shadow:var(--shVolt);animation:sbob 1.1s cubic-bezier(.45,0,.55,1) infinite alternate}
+.spl-badge i{font-size:50px;color:var(--ink)}
+@keyframes sbob{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-12px) rotate(4deg)}}
+.spl-name{font-family:'Anton';font-size:46px;color:#fff;letter-spacing:-1.5px;text-transform:uppercase;margin-top:26px;line-height:.9}
+.spl-name b{color:var(--volt);font-weight:400}
+.spl-sub{font-family:'JetBrains Mono';font-size:11px;color:#7E7E72;letter-spacing:3px;text-transform:uppercase;margin-top:10px}
+.spl-bar{margin-top:34px;width:62px;height:4px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}
+.spl-bar::after{content:'';display:block;height:100%;width:38%;background:var(--volt);border-radius:99px;animation:sload 1.9s ease forwards}
+@keyframes sload{0%{transform:translateX(-110%)}100%{transform:translateX(300%)}}
+
+/* TOPBAR */
+#topbar{flex-shrink:0;padding:12px 18px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--surf);position:relative;z-index:40}
+.tb-l{display:flex;align-items:center;gap:11px}
+.tb-badge{width:40px;height:40px;border-radius:13px;background:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:var(--shS)}
+.tb-badge i{font-size:23px;color:var(--volt)}
+.tb-hi{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+.tb-name{font-family:'Anton';font-size:22px;letter-spacing:-.5px;text-transform:uppercase;line-height:.95;margin-top:1px}
+.tb-r{display:flex;gap:10px}
+.tb-ic{width:42px;height:42px;border-radius:13px;background:var(--surf2);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:transform .12s,background .2s}
+.tb-ic:active{transform:scale(.9)}
+.tb-ic i{font-size:21px;color:var(--ink)}
+.tb-dot{position:absolute;top:8px;right:9px;width:9px;height:9px;background:var(--hi);border-radius:50%;border:2px solid var(--surf2)}
+.tb-av{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#D4FF3D,#A8D400);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;font-size:17px;color:var(--ink);transition:transform .12s}
+.tb-av:active{transform:scale(.9)}
+
+/* CONTENT */
+#content{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+.screen{position:absolute;inset:0;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .28s ease,transform .28s ease,visibility .28s}
+.screen.active{opacity:1;visibility:visible;transform:none}
+.screen.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen.scroll::-webkit-scrollbar{width:0}
+
+/* MAP */
+#map{position:absolute;inset:0;z-index:1}
+.glass{background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border:1px solid rgba(255,255,255,.5)}
+.m-search{position:absolute;top:14px;left:14px;right:14px;z-index:10;border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:11px;box-shadow:var(--shM)}
+.m-search i{font-size:20px;color:var(--ink2)}
+.m-search span{font-size:14px;color:var(--ink2);font-weight:600}
+.m-search .live{margin-left:auto;display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--hi);letter-spacing:.5px}
+.m-search .live .pulse{width:7px;height:7px;border-radius:50%;background:var(--hi);animation:pul 1.4s ease infinite}
+@keyframes pul{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.m-legend{position:absolute;bottom:24px;left:14px;z-index:10;border-radius:16px;padding:13px 14px;box-shadow:var(--shM)}
+.lg-t{font-family:'JetBrains Mono';font-size:9px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:9px}
+.lg-r{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink);font-weight:600;margin-bottom:6px}
+.lg-r:last-child{margin-bottom:0}
+.lg-d{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+.m-fabs{position:absolute;bottom:24px;right:14px;z-index:10;display:flex;flex-direction:column;gap:12px}
+.fab{width:52px;height:52px;border-radius:17px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.fab:active{transform:scale(.9)}
+.fab i{font-size:24px}
+.fab.loc{background:var(--surf);box-shadow:var(--shM)}
+.fab.loc i{color:var(--ink)}
+
+/* ZONE SHEET */
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:30;background:var(--surf);border-radius:26px 26px 0 0;padding:10px 20px 26px;box-shadow:0 -10px 40px rgba(10,10,10,.18);transform:translateY(115%);transition:transform .42s cubic-bezier(.32,.72,0,1)}
+.sheet.up{transform:translateY(0)}
+.sheet-grip{width:42px;height:5px;border-radius:99px;background:var(--hair2);margin:0 auto 16px}
+.sheet-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sheet-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:10px;font-family:'JetBrains Mono';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.sheet-x{width:34px;height:34px;border-radius:11px;background:var(--surf2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink2)}
+.sheet-title{font-family:'Anton';font-size:28px;text-transform:uppercase;letter-spacing:-.7px;line-height:1;margin-bottom:10px}
+.sheet-desc{color:var(--ink2);font-size:14px;line-height:1.55;font-weight:500;margin-bottom:18px}
+.sheet-row{display:flex;gap:10px}
+.sbtn{flex:1;padding:15px;border-radius:15px;border:none;font-family:'Archivo';font-weight:800;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .12s}
+.sbtn:active{transform:scale(.96)}
+.sbtn.ghost{background:var(--surf2);color:var(--ink)}
+.sbtn.solid{background:var(--ink);color:var(--volt)}
+.sbtn i{font-size:18px}
+
+/* SECTION HEAD */
+.s-head{padding:22px 20px 6px}
+.s-kick{font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+.s-head h1{font-family:'Anton';font-size:38px;text-transform:uppercase;letter-spacing:-1.5px;line-height:.9}
+.s-head h1 .hl{background:var(--volt);padding:0 8px;border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.s-head .meta{color:var(--ink2);font-size:13px;font-weight:600;margin-top:9px;display:flex;align-items:center;gap:6px}
+
+/* FILTER SEGMENTED */
+.filters{display:flex;gap:8px;overflow-x:auto;padding:16px 20px 6px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filt{flex-shrink:0;padding:9px 16px;border-radius:13px;background:var(--surf);border:1px solid var(--hair);color:var(--ink2);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;box-shadow:var(--shS)}
+.filt.on{background:var(--ink);color:var(--volt);border-color:var(--ink)}
+
+/* REPORT CARDS */
+.r-list{padding:14px 20px 130px;display:flex;flex-direction:column;gap:13px}
+.r-card{background:var(--surf);border-radius:20px;padding:16px;display:flex;gap:14px;box-shadow:var(--shM);transition:transform .15s;opacity:0;transform:translateY(14px);animation:rise .5s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.r-card:active{transform:scale(.985)}
+.r-ic{width:50px;height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.r-ic i{font-size:24px}
+.r-b{flex:1;min-width:0}
+.r-tag{display:inline-block;padding:4px 11px;border-radius:8px;font-family:'JetBrains Mono';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.r-tt{font-weight:800;font-size:16px;letter-spacing:-.2px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-ds{color:var(--ink2);font-size:13px;line-height:1.45;font-weight:500;margin-bottom:11px}
+.r-m{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--ink2);font-weight:600;flex-wrap:wrap}
+.r-m span{display:flex;align-items:center;gap:4px}
+.r-m i{font-size:15px;color:var(--ink3)}
+.r-vf{color:var(--sf)!important}
+.r-vf i{color:var(--sf)!important}
+.r-up{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--surf2);padding:6px 11px;border-radius:10px;font-weight:800;font-size:12px}
+.r-up i{font-size:15px;color:var(--ink)}
+
+/* ALERTS */
+.a-list{padding:18px 20px 130px;display:flex;flex-direction:column;gap:13px}
+.a-card{background:var(--surf);border-radius:20px;padding:16px 16px 16px 18px;display:flex;gap:14px;position:relative;overflow:hidden;box-shadow:var(--shM);opacity:0;transform:translateY(14px);animation:rise .5s cubic-bezier(.22,1,.36,1) forwards}
+.a-card::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:5px;border-radius:0 5px 5px 0}
+.a-card.h::before{background:var(--hi)}
+.a-card.m::before{background:var(--md)}
+.a-card.l::before{background:var(--sf)}
+.a-ic{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px}
+.a-ic i{font-size:22px}
+.a-b{flex:1}
+.a-tt{font-weight:800;font-size:15px;letter-spacing:-.2px;margin-bottom:5px}
+.a-ds{color:var(--ink2);font-size:13px;line-height:1.5;font-weight:500}
+.a-tm{font-family:'JetBrains Mono';color:var(--ink3);font-size:10px;margin-top:9px;text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:5px}
+
+/* PROFILE */
+.p-hero{margin:20px 20px 16px;background:linear-gradient(155deg,#1C1C14 0%,#0A0A0A 100%);border-radius:26px;padding:26px 22px;position:relative;overflow:hidden;box-shadow:var(--shL)}
+.p-hero::after{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(198,245,0,.22),transparent 65%)}
+.p-top{display:flex;align-items:center;gap:15px;position:relative;z-index:2}
+.p-av{width:68px;height:68px;border-radius:21px;background:linear-gradient(135deg,#D4FF3D,#A8D400);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:var(--ink);flex-shrink:0;box-shadow:var(--shVolt)}
+.p-name{font-family:'Anton';font-size:28px;color:#fff;text-transform:uppercase;letter-spacing:-.6px;line-height:.95}
+.p-sub{font-family:'JetBrains Mono';font-size:11px;color:var(--volt);letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;font-weight:500}
+.p-lvl{position:relative;z-index:2;margin-top:20px;background:rgba(255,255,255,.07);border-radius:14px;padding:13px 15px}
+.p-lvl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.p-lvl-t{font-size:12px;color:#C9C9BD;font-weight:700}
+.p-lvl-v{font-family:'JetBrains Mono';font-size:12px;color:var(--volt);font-weight:700}
+.p-bar{height:7px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
+.p-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#A8D400,#D4FF3D);border-radius:99px;transition:width 1.1s cubic-bezier(.22,1,.36,1)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;padding:0 20px 16px}
+.stat{background:var(--surf);border-radius:18px;padding:16px 8px;text-align:center;box-shadow:var(--shM)}
+.stat .n{font-family:'Anton';font-size:36px;line-height:.85;letter-spacing:-1px}
+.stat .l{font-family:'JetBrains Mono';color:var(--ink2);font-size:9px;margin-top:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.card-block{margin:0 20px 16px;background:var(--surf);border-radius:22px;padding:20px;box-shadow:var(--shM)}
+.cb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cb-title{font-weight:800;font-size:16px;letter-spacing:-.2px}
+.cb-sub{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.chart{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:110px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%}
+.chart .bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
+.chart .bar{width:100%;border-radius:8px;background:var(--surf2);transition:height 1s cubic-bezier(.22,1,.36,1);height:0}
+.chart .bar.peak{background:var(--volt)}
+.chart .day{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);font-weight:700}
+.ods{margin:0 20px 16px;background:var(--volt);border-radius:22px;padding:20px;box-shadow:var(--shVolt);position:relative;overflow:hidden}
+.ods::after{content:'11';position:absolute;right:-6px;bottom:-22px;font-family:'Anton';font-size:120px;color:rgba(44,54,0,.1);line-height:1}
+.ods-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;position:relative;z-index:2}
+.ods-tag{font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--voltText);background:rgba(44,54,0,.12);padding:5px 10px;border-radius:8px;letter-spacing:1px}
+.ods-t{font-family:'Anton';font-size:19px;color:var(--ink);text-transform:uppercase;letter-spacing:-.4px;margin-bottom:8px;position:relative;z-index:2;line-height:1}
+.ods-d{color:var(--voltText);font-size:13px;line-height:1.5;font-weight:600;position:relative;z-index:2}
+.settings{margin:0 20px 16px;background:var(--surf);border-radius:22px;overflow:hidden;box-shadow:var(--shM)}
+.set{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--hair);cursor:pointer;transition:background .15s}
+.set:last-child{border-bottom:none}
+.set:active{background:var(--surf2)}
+.set-ic{width:38px;height:38px;border-radius:11px;background:var(--surf2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.set-ic i{font-size:19px;color:var(--ink)}
+.set-tx{flex:1}
+.set-l{font-size:14px;font-weight:700}
+.set-s{font-size:11px;color:var(--ink2);font-weight:500;margin-top:1px}
+.set>i.chev{font-size:18px;color:var(--ink3)}
+.foot{text-align:center;padding:4px 20px 130px;font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase}
+
+/* BOTTOM NAV */
+#nav{position:absolute;left:0;right:0;bottom:0;z-index:50;height:84px;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border-top:1px solid var(--hair);display:flex;align-items:flex-start;padding:10px 14px 0;padding-bottom:env(safe-area-inset-bottom)}
+.nav-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding-top:6px}
+.nav-i i{font-size:25px;color:var(--ink3);transition:color .18s,transform .18s}
+.nav-i span{font-family:'JetBrains Mono';font-size:9px;color:var(--ink3);font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:color .18s}
+.nav-i.on i{color:var(--ink);transform:translateY(-1px)}
+.nav-i.on span{color:var(--ink)}
+.nav-fab{flex:0 0 64px;display:flex;justify-content:center;margin-top:-22px}
+.nav-fab button{width:60px;height:60px;border-radius:21px;background:var(--volt);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shVolt);transition:transform .14s}
+.nav-fab button:active{transform:scale(.9) rotate(90deg)}
+.nav-fab button i{font-size:30px;color:var(--ink)}
+
+/* leaflet */
+.leaflet-control-zoom,.leaflet-control-attribution{display:none!important}
+.leaflet-container{background:#E8E7E0;font-family:'Archivo'}
+.leaflet-popup-content-wrapper{background:var(--surf)!important;color:var(--ink)!important;border-radius:18px!important;box-shadow:var(--shL)!important;padding:3px!important}
+.leaflet-popup-tip{box-shadow:var(--shL)!important}
+.leaflet-popup-content{margin:13px 15px!important;font-family:'Archivo'!important}
+.pop-tt{font-family:'Anton';font-size:17px;text-transform:uppercase;letter-spacing:-.3px;margin-bottom:5px}
+.pop-ds{font-size:12px;color:var(--ink2);line-height:1.45;font-weight:500;margin-bottom:9px}
+.pop-ch{display:inline-block;padding:4px 10px;border-radius:8px;font-family:'JetBrains Mono';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.pin{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50% 50% 50% 3px;transform:rotate(45deg);box-shadow:0 4px 10px rgba(10,10,10,.35);border:2.5px solid #fff}
+.pin i{transform:rotate(-45deg);font-size:16px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="statusbar">
+  <span>9:41</span>
+  <span class="sb-r"><i class="ti ti-signal-4g"></i><i class="ti ti-wifi"></i><i class="ti ti-battery-3"></i></span>
+</div>
+
+<div id="splash">
+  <div class="spl-badge"><i class="ti ti-bike"></i></div>
+  <div class="spl-name">Ruta<b>Bacana</b></div>
+  <div class="spl-sub">Pedalea seguro · Cuenca</div>
+  <div class="spl-bar"></div>
+</div>
+
+<div id="topbar">
+  <div class="tb-l">
+    <div class="tb-badge"><i class="ti ti-bike"></i></div>
+    <div>
+      <div class="tb-hi">Buenos días</div>
+      <div class="tb-name">RutaBacana</div>
+    </div>
+  </div>
+  <div class="tb-r">
+    <div class="tb-ic" onclick="go('alertas')"><i class="ti ti-bell"></i><span class="tb-dot"></span></div>
+    <div class="tb-av" onclick="go('perfil')">B</div>
+  </div>
+</div>
+
+<div id="content">
+
+  <div id="s-mapa" class="screen active">
+    <div id="map"></div>
+    <div class="m-search glass">
+      <i class="ti ti-search"></i>
+      <span>¿A dónde vas hoy?</span>
+      <span class="live"><span class="pulse"></span>EN VIVO</span>
+    </div>
+    <div class="m-legend glass">
+      <div class="lg-t">Riesgo vial</div>
+      <div class="lg-r"><span class="lg-d" style="background:#FF3B30"></span>Alto riesgo</div>
+      <div class="lg-r"><span class="lg-d" style="background:#FF9500"></span>Riesgo medio</div>
+      <div class="lg-r"><span class="lg-d" style="background:#1FC85C"></span>Zona segura</div>
+    </div>
+    <div class="m-fabs">
+      <button class="fab loc" onclick="locate()" aria-label="Mi ubicación"><i class="ti ti-current-location"></i></button>
+    </div>
+    <div class="sheet" id="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-top">
+        <div class="sheet-badge" id="sh-badge"></div>
+        <div class="sheet-x" onclick="closeSheet()"><i class="ti ti-x"></i></div>
+      </div>
+      <div class="sheet-title" id="sh-title"></div>
+      <div class="sheet-desc" id="sh-desc"></div>
+      <div class="sheet-row">
+        <button class="sbtn ghost"><i class="ti ti-flag"></i>Reportes</button>
+        <button class="sbtn solid"><i class="ti ti-navigation"></i>Navegar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="s-reportes" class="screen scroll">
+    <div class="s-head">
+      <div class="s-kick">Comunidad ciclista</div>
+      <h1>Reportes <span class="hl">en vivo</span></h1>
+      <div class="meta"><i class="ti ti-refresh" style="font-size:14px"></i>Actualizado hace 5 min · 24 reportes hoy</div>
+    </div>
+    <div class="filters">
+      <div class="filt on" onclick="filt(this)">Todos</div>
+      <div class="filt" onclick="filt(this)">Baches</div>
+      <div class="filt" onclick="filt(this)">Obras</div>
+      <div class="filt" onclick="filt(this)">Tráfico</div>
+      <div class="filt" onclick="filt(this)">Peligro</div>
+      <div class="filt" onclick="filt(this)">Ciclovía</div>
+    </div>
+    <div class="r-list" id="r-list"></div>
+  </div>
+
+  <div id="s-alertas" class="screen scroll">
+    <div class="s-head">
+      <div class="s-kick">Tiempo real</div>
+      <h1>Alertas</h1>
+      <div class="meta"><i class="ti ti-alert-circle" style="font-size:14px"></i>3 alertas activas en tu zona</div>
+    </div>
+    <div class="a-list" id="a-list"></div>
+  </div>
+
+  <div id="s-perfil" class="screen scroll">
+    <div class="p-hero">
+      <div class="p-top">
+        <div class="p-av">B</div>
+        <div>
+          <div class="p-name">Boris</div>
+          <div class="p-sub">Ciclista · Cuenca EC</div>
+        </div>
+      </div>
+      <div class="p-lvl">
+        <div class="p-lvl-top">
+          <span class="p-lvl-t">Nivel: Explorador urbano</span>
+          <span class="p-lvl-v">680 / 1000 XP</span>
+        </div>
+        <div class="p-bar"><i id="xpbar"></i></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">12</div><div class="l">Rutas</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">Reportes</div></div>
+      <div class="stat"><div class="n">48</div><div class="l">Km</div></div>
+    </div>
+    <div class="card-block">
+      <div class="cb-head">
+        <div class="cb-title">Actividad semanal</div>
+        <div class="cb-sub">Km recorridos</div>
+      </div>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="ods">
+      <div class="ods-top"><span class="ods-tag">ODS 11</span></div>
+      <div class="ods-t">Ciudades y comunidades sostenibles</div>
+      <div class="ods-d">Cada ruta segura que eliges y cada reporte que envías impulsa la meta 11.2 de la ONU: transporte seguro, accesible y sostenible para todos.</div>
+    </div>
+    <div class="settings">
+      <div class="set"><div class="set-ic"><i class="ti ti-bell"></i></div><div class="set-tx"><div class="set-l">Notificaciones</div><div class="set-s">Alertas de zona activas</div></div><i class="ti ti-chevron-right chev"></i></div>
+      <div class="set"><div class="set-ic"><i class="ti ti-map-2"></i></div><div class="set-tx"><div class="set-l">Rutas guardadas</div><div class="set-s">3 rutas favoritas</div></div><i class="ti ti-chevron-right chev"></i></div>
+      <div class="set"><div class="set-ic"><i class="ti ti-shield-half"></i></div><div class="set-tx"><div class="set-l">Privacidad</div><div class="set-s">Datos de ubicación</div></div><i class="ti ti-chevron-right chev"></i></div>
+    </div>
+    <div class="settings">
+      <div class="set"><div class="set-ic"><i class="ti ti-info-circle"></i></div><div class="set-tx"><div class="set-l">Acerca de RutaBacana</div><div class="set-s">v1.0 · Proyecto ODS-11 · ITS Cuenca</div></div><i class="ti ti-chevron-right chev"></i></div>
+    </div>
+    <div class="foot">RutaBacana © 2026 · Hecho en Cuenca 🇪🇨</div>
+  </div>
+
+</div>
+
+<div id="nav">
+  <div class="nav-i on" id="n-mapa" onclick="go('mapa')"><i class="ti ti-map-2"></i><span>Mapa</span></div>
+  <div class="nav-i" id="n-reportes" onclick="go('reportes')"><i class="ti ti-flag"></i><span>Reportes</span></div>
+  <div class="nav-fab"><button onclick="report()" aria-label="Nuevo reporte"><i class="ti ti-plus"></i></button></div>
+  <div class="nav-i" id="n-alertas" onclick="go('alertas')"><i class="ti ti-bell"></i><span>Alertas</span></div>
+  <div class="nav-i" id="n-perfil" onclick="go('perfil')"><i class="ti ti-user"></i><span>Perfil</span></div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+if(window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches){document.body.classList.add('installed');}
+
+const SCREENS={mapa:'s-mapa',reportes:'s-reportes',alertas:'s-alertas',perfil:'s-perfil'};
+const NAVS={mapa:'n-mapa',reportes:'n-reportes',alertas:'n-alertas',perfil:'n-perfil'};
+let gmap=null,charted=false;
+
+function go(t){
+  Object.entries(SCREENS).forEach(([k,v])=>document.getElementById(v).classList.toggle('active',k===t));
+  Object.entries(NAVS).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===t));
+  if(t==='mapa'&&gmap)setTimeout(()=>gmap.invalidateSize(),60);
+  if(t==='reportes')stagger('r-list');
+  if(t==='alertas')stagger('a-list');
+  if(t==='perfil')drawChart();
+}
+function stagger(id){[...document.getElementById(id).children].forEach((c,i)=>{c.style.animation='none';c.offsetHeight;c.style.animationDelay=(i*60)+'ms';c.style.animation='';});}
+
+const RPT=[
+ {ic:'ti-cone',tp:'Obra',c:'#FF9500',tt:'Cierre parcial calle Sucre',ds:'Obra de agua potable. Carril habilitado para ciclistas con baja velocidad.',lc:'Sucre · Luis Cordero',tm:'23 min',v:14,ok:true},
+ {ic:'ti-alert-triangle',tp:'Peligro',c:'#FF3B30',tt:'Bache profundo en Av. España',ds:'Bache de 50cm sin señalización frente al mercado central.',lc:'Av. España',tm:'45 min',v:22,ok:false},
+ {ic:'ti-car',tp:'Tráfico',c:'#FF6A00',tt:'Congestión en Centro Histórico',ds:'Evento en Plaza Calderón. Mejor rodear por El Barranco.',lc:'Plaza Calderón',tm:'1 h',v:31,ok:false},
+ {ic:'ti-circle-check',tp:'Ciclovía',c:'#1FC85C',tt:'El Barranco despejado',ds:'Ciclovía limpia y señalizada. Temperatura ideal para rodar.',lc:'Ciclovía El Barranco',tm:'1.5 h',v:38,ok:true},
+ {ic:'ti-traffic-lights',tp:'Peligro',c:'#FF3B30',tt:'Semáforo sin luz en Av. Loja',ds:'Intersección sin control activo. Precaución máxima al cruzar.',lc:'Av. Loja',tm:'3 h',v:18,ok:false},
+];
+function hex(c,a){return c+a;}
+function renderR(){
+ document.getElementById('r-list').innerHTML=RPT.map((r,i)=>`
+ <div class="r-card" style="animation-delay:${i*60}ms">
+  <div class="r-ic" style="background:${hex(r.c,'1A')}"><i class="ti ${r.ic}" style="color:${r.c}"></i></div>
+  <div class="r-b">
+   <div class="r-tag" style="background:${hex(r.c,'1A')};color:${r.c}">${r.tp}</div>
+   <div class="r-tt">${r.tt}</div>
+   <div class="r-ds">${r.ds}</div>
+   <div class="r-m">
+    <span><i class="ti ti-map-pin"></i>${r.lc}</span>
+    <span><i class="ti ti-clock"></i>${r.tm}</span>
+    ${r.ok?'<span class="r-vf"><i class="ti ti-rosette-discount-check"></i>Verificado</span>':''}
+    <span class="r-up"><i class="ti ti-arrow-big-up-lines"></i>${r.v}</span>
+   </div>
+  </div>
+ </div>`).join('');
+}
+const ALT=[
+ {cl:'h',ic:'ti-alert-octagon',c:'#FF3B30',tt:'Zona de alto riesgo activa',ds:'3 incidentes en Centro Histórico en las últimas 2h. Usa El Barranco como ruta alternativa.',tm:'Hace 15 min'},
+ {cl:'m',ic:'ti-cone',c:'#FF9500',tt:'Obra nueva en Av. España',ds:'Inicio de obra en Rafael María Arízaga. Afectación estimada: 1 semana.',tm:'Hace 1 h'},
+ {cl:'l',ic:'ti-circle-check',c:'#1FC85C',tt:'Ciclovía El Barranco verificada',ds:'12 ciclistas confirmaron buen estado. Condiciones ideales para rodar.',tm:'Hace 2 h'},
+ {cl:'m',ic:'ti-cloud-rain',c:'#FF9500',tt:'Lluvia prevista esta tarde',ds:'Superficie mojada aumenta el tiempo de frenado. Mantén distancia de seguridad.',tm:'Hace 3 h'},
+ {cl:'h',ic:'ti-barrier-block',c:'#FF3B30',tt:'Bolívar cerrada por obras',ds:'Cierre total entre Hermano Miguel y Tarqui. Desvío señalizado habilitado.',tm:'Hace 5 h'},
+];
+function renderA(){
+ document.getElementById('a-list').innerHTML=ALT.map((a,i)=>`
+ <div class="a-card ${a.cl}" style="animation-delay:${i*60}ms">
+  <div class="a-ic" style="background:${hex(a.c,'1A')}"><i class="ti ${a.ic}" style="color:${a.c}"></i></div>
+  <div class="a-b">
+   <div class="a-tt">${a.tt}</div>
+   <div class="a-ds">${a.ds}</div>
+   <div class="a-tm"><i class="ti ti-clock"></i>${a.tm}</div>
+  </div>
+ </div>`).join('');
+}
+const WEEK=[8,12,6,15,10,22,18],DAYS=['L','M','M','J','V','S','D'],MX=22;
+function buildChart(){
+ document.getElementById('chart').innerHTML=WEEK.map((k,i)=>`
+ <div class="col"><div class="bar-wrap"><div class="bar ${k===MX?'peak':''}" data-h="${Math.round(k/MX*100)}"></div></div><div class="day">${DAYS[i]}</div></div>`).join('');
+}
+function drawChart(){
+ if(charted)return;charted=true;
+ setTimeout(()=>{document.querySelectorAll('#chart .bar').forEach((b,i)=>setTimeout(()=>b.style.height=b.dataset.h+'%',i*70));
+ document.getElementById('xpbar').style.width='68%';},120);
+}
+function filt(el){el.parentElement.querySelectorAll('.filt').forEach(f=>f.classList.remove('on'));el.classList.add('on');}
+
+function openSheet(z,cfg){
+ const b=document.getElementById('sh-badge');
+ b.innerHTML=`<i class="ti ${cfg.icon}"></i>${cfg.label}`;b.style.background=hex(cfg.color,'1F');b.style.color=cfg.color;
+ document.getElementById('sh-title').textContent=z.name;
+ document.getElementById('sh-desc').textContent=z.desc;
+ document.getElementById('sheet').classList.add('up');
+}
+function closeSheet(){document.getElementById('sheet').classList.remove('up');}
+function report(){alert('Nuevo reporte 📍\n\nEn la versión completa: toma una foto, la ubicación se geolocaliza automáticamente y se valida con la comunidad.');}
+function locate(){
+ if(!gmap)return;
+ gmap.locate({setView:true,maxZoom:15});
+ gmap.once('locationfound',e=>L.circleMarker(e.latlng,{radius:9,color:'#fff',weight:3,fillColor:'#2D7DFF',fillOpacity:1}).addTo(gmap).bindPopup('<div class="pop-tt">Tu ubicación</div>').openPopup());
+ gmap.once('locationerror',()=>gmap.setView([-2.9001,-79.0059],14));
+}
+
+function initMap(){
+ if(gmap)return;
+ gmap=L.map('map',{center:[-2.9001,-79.0059],zoom:14,zoomControl:false,attributionControl:false});
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(gmap);
+ const ZNS=[
+  {name:'Centro Histórico',risk:'high',desc:'Tráfico denso, calles estrechas y sin ciclovías. Hora pico crítica: 7–9am y 5–7pm.',c:[[-2.892,-79.011],[-2.892,-78.999],[-2.900,-78.999],[-2.900,-79.011]]},
+  {name:'Av. España',risk:'high',desc:'Alto flujo de buses y camiones rumbo al Terminal. Riesgo elevado durante todo el día.',c:[[-2.887,-79.017],[-2.887,-79.011],[-2.895,-79.011],[-2.895,-79.017]]},
+  {name:'Gil Ramírez Dávalos',risk:'high',desc:'Cruce conflictivo con tráfico interurbano. Sin señalización para ciclistas.',c:[[-2.882,-79.008],[-2.882,-78.998],[-2.888,-78.998],[-2.888,-79.008]]},
+  {name:'Av. Paucarbamba',risk:'medium',desc:'Tráfico moderado. Precaución en intersecciones. Horario crítico: 12–1pm.',c:[[-2.901,-78.994],[-2.901,-78.999],[-2.910,-78.999],[-2.910,-78.994]]},
+  {name:'Av. Ordóñez Lazo',risk:'medium',desc:'Tramos con obras y superficie irregular. Mantén velocidad moderada.',c:[[-2.902,-79.016],[-2.902,-79.011],[-2.912,-79.011],[-2.912,-79.016]]},
+  {name:'Remigio Crespo',risk:'medium',desc:'Tráfico mixto. Carriles ciclistas señalizados solo en algunos tramos.',c:[[-2.905,-79.011],[-2.905,-78.999],[-2.909,-78.999],[-2.909,-79.011]]},
+  {name:'Ciclovía El Barranco',risk:'low',desc:'Ciclovía dedicada junto al río Tomebamba. La ruta más segura y escénica de Cuenca.',c:[[-2.899,-79.015],[-2.899,-78.997],[-2.902,-78.997],[-2.902,-79.015]]},
+  {name:'Av. Solano',risk:'low',desc:'Carril bici exclusivo, señalizado y bien mantenido. Ideal para el uso diario.',c:[[-2.909,-79.003],[-2.909,-78.996],[-2.913,-78.996],[-2.913,-79.003]]},
+  {name:'Parque El Paraíso',risk:'low',desc:'Zona de baja velocidad con carril compartido señalizado. Ideal para familias.',c:[[-2.914,-79.011],[-2.914,-79.004],[-2.921,-79.004],[-2.921,-79.011]]},
+ ];
+ const CFG={
+  high:{color:'#FF3B30',label:'Alto riesgo',icon:'ti-alert-triangle'},
+  medium:{color:'#FF9500',label:'Riesgo medio',icon:'ti-alert-circle'},
+  low:{color:'#1FC85C',label:'Zona segura',icon:'ti-circle-check'},
+ };
+ ZNS.forEach(z=>{
+  const c=CFG[z.risk];
+  const p=L.polygon(z.c,{color:c.color,fillColor:c.color,fillOpacity:.28,weight:2,opacity:.9,lineJoin:'round'}).addTo(gmap);
+  p.on('click',e=>{L.DomEvent.stopPropagation(e);openSheet(z,c);});
+  p.on('mouseover',function(){this.setStyle({fillOpacity:.45,weight:3});});
+  p.on('mouseout',function(){this.setStyle({fillOpacity:.28,weight:2});});
+ });
+ const MKS=[
+  {lat:-2.891,lng:-79.013,c:'#FF3B30',ic:'ti-alert-triangle',tt:'Bache peligroso',ds:'Bache grande en Av. España sin señalización.'},
+  {lat:-2.897,lng:-79.004,c:'#FF9500',ic:'ti-cone',tt:'Obra en ejecución',ds:'Calle Sucre parcialmente cerrada.'},
+  {lat:-2.895,lng:-79.007,c:'#FF6A00',ic:'ti-car',tt:'Tráfico intenso',ds:'Congestión en Gdor. Córdova con Bolívar.'},
+  {lat:-2.900,lng:-79.009,c:'#1FC85C',ic:'ti-circle-check',tt:'Ciclovía limpia',ds:'El Barranco en perfectas condiciones.'},
+  {lat:-2.893,lng:-79.000,c:'#FF3B30',ic:'ti-traffic-lights',tt:'Semáforo roto',ds:'Intersección Av. Loja sin control activo.'},
+  {lat:-2.906,lng:-79.007,c:'#1FC85C',ic:'ti-circle-check',tt:'Ruta despejada',ds:'Av. Solano sin incidencias reportadas.'},
+ ];
+ MKS.forEach(m=>{
+  const tc=(m.c==='#FF9500'||m.c==='#FF6A00')?'#0A0A0A':'#fff';
+  const ic=L.divIcon({className:'',iconSize:[34,34],iconAnchor:[17,32],html:`<div class="pin" style="background:${m.c}"><i class="ti ${m.ic}" style="color:${tc}"></i></div>`});
+  L.marker([m.lat,m.lng],{icon:ic}).addTo(gmap).bindPopup(`<div class="pop-tt">${m.tt}</div><div class="pop-ds">${m.ds}</div><span class="pop-ch" style="background:${hex(m.c,'1F')};color:${m.c}">Reporte comunitario</span>`);
+ });
+ gmap.on('click',closeSheet);
+ gmap.invalidateSize();
+}
+
+renderR();renderA();buildChart();
+window.addEventListener('load',()=>{
+ setTimeout(()=>{document.getElementById('splash').classList.add('gone');setTimeout(initMap,360);},2100);
+});
+</script>
+</body>
+</html>
